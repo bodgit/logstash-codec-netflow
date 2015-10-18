@@ -180,13 +180,13 @@ end
 class IpfixPDU < BinData::Record
   endian :big
   uint16 :version
-  uint16 :pdu_length
+  uint16 :pdu_length, :assert => lambda { pdu_length > 16 }
   uint32 :unix_sec
   uint32 :flow_seq_num
   uint32 :observation_domain_id
   array  :records, :read_until => lambda { array.num_bytes == pdu_length - 16 } do
     uint16 :flowset_id
-    uint16 :flowset_length
+    uint16 :flowset_length, :assert => lambda { flowset_length > 4 }
     choice :flowset_data, :selection => :flowset_id do
       ipfix_template_flowset 2
       ipfix_option_flowset   3
