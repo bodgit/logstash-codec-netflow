@@ -205,4 +205,39 @@ describe LogStash::Codecs::Netflow do
       expect(decode[1].to_json).to eq(json_events[1])
     end
   end
+
+  context "Netflow 9 options template plus data" do
+    let(:data) do
+      IO.read(File.join(File.dirname(__FILE__), "netflow9_test_nprobe_options_tpl_data.dat"), :mode => "rb")
+    end
+
+    let(:json_events) do
+      events = []
+      events << <<-END
+        {
+          "@timestamp":"2015-10-08T19:06:29.000Z",
+          "netflow": {
+            "version":9,
+            "flow_seq_num":0,
+            "flowset_id":259,
+            "scope_system":0,
+            "total_flows_exp":1,
+            "total_pkts_exp":0},
+          "@version":"1"
+         }
+      END
+
+      events.map{|event| event.gsub(/\s+/, "")}
+    end
+
+    it "should decode raw data" do
+      expect(decode.size).to eq(1)
+      expect(decode[0]["[netflow][total_flows_exp]"]).to eq(1)
+    end
+
+    it "should serialize to json" do
+      expect(decode[0].to_json).to eq(json_events[0])
+    end
+  end
+
 end
