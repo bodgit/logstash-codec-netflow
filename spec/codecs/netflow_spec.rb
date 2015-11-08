@@ -10,7 +10,7 @@ describe LogStash::Codecs::Netflow do
 
   let(:decode) do
     [].tap do |events|
-      subject.decode(data){|event| events << event}
+      data.each { |packet| subject.decode(packet){|event| events << event}}
     end
   end
 
@@ -19,7 +19,8 @@ describe LogStash::Codecs::Netflow do
       # this netflow raw data was produced with softflowd and captured with netcat
       # softflowd -D -i eth0 -v 5 -t maxlife=1 -n 127.0.01:8765
       # nc -k -4 -u -l 127.0.0.1 8765 > netflow5.dat
-      IO.read(File.join(File.dirname(__FILE__), "netflow5.dat"), :mode => "rb")
+      data = []
+      data << IO.read(File.join(File.dirname(__FILE__), "netflow5.dat"), :mode => "rb")
     end
 
     let(:json_events) do
@@ -124,7 +125,8 @@ describe LogStash::Codecs::Netflow do
       # this netflow raw data was produced with softflowd and captured with netcat
       # softflowd -D -i eth0 -v 9 -t maxlife=1 -n 127.0.01:8765
       # nc -k -4 -u -l 127.0.0.1 8765 > netflow9.dat
-      IO.read(File.join(File.dirname(__FILE__), "netflow9.dat"), :mode => "rb")
+      data = []
+      data << IO.read(File.join(File.dirname(__FILE__), "netflow9.dat"), :mode => "rb")
     end
 
     let(:json_events) do
@@ -211,7 +213,8 @@ describe LogStash::Codecs::Netflow do
       # this netflow raw data was produced with softflowd and captured with netcat
       # softflowd -D -i eth0 -v 10 -t maxlife=1 -n 127.0.01:8765
       # nc -k -4 -u -l 127.0.0.1 8765 > ipfix.dat
-      IO.read(File.join(File.dirname(__FILE__), "ipfix.dat"), :mode => "rb")
+      data = []
+      data << IO.read(File.join(File.dirname(__FILE__), "ipfix.dat"), :mode => "rb")
     end
 
     let(:json_events) do
@@ -449,4 +452,38 @@ describe LogStash::Codecs::Netflow do
       expect(decode[6].to_json).to eq(json_events[6])
     end
   end
+
+  context "IPFIX invalid PDU length" do
+    let(:data) do
+      data = []
+      data << IO.read(File.join(File.dirname(__FILE__), "ipfix_test_nprobe_tpl.dat"), :mode => "rb")
+      data << IO.read(File.join(File.dirname(__FILE__), "ipfix_test_nprobe_data_invalid_pdu_length.dat"), :mode => "rb")
+    end
+    it "should not raise_error" do
+      expect{decode.size}.not_to raise_error
+    end
+  end
+
+  context "IPFIX invalid length (EOF)" do
+    let(:data) do
+      data = []
+      data << IO.read(File.join(File.dirname(__FILE__), "ipfix_test_nprobe_tpl.dat"), :mode => "rb")
+      data << IO.read(File.join(File.dirname(__FILE__), "ipfix_test_nprobe_data_invalid_eof.dat"), :mode => "rb")
+    end
+    it "should not raise_error" do
+      expect{decode.size}.not_to raise_error
+    end
+  end
+
+  context "IPFIX invalid length (data truncated)" do
+    let(:data) do
+      data = []
+      data << IO.read(File.join(File.dirname(__FILE__), "ipfix_test_nprobe_tpl.dat"), :mode => "rb")
+      data << IO.read(File.join(File.dirname(__FILE__), "ipfix_test_nprobe_data_invalid_truncated.dat"), :mode => "rb")
+    end
+    it "should not raise_error" do
+      expect{decode.size}.not_to raise_error
+    end
+  end
+
 end

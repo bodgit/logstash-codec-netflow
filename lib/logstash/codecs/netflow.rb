@@ -133,6 +133,8 @@ class LogStash::Codecs::Netflow < LogStash::Codecs::Base
     else
       @logger.warn("Unsupported Netflow version v#{header.version}")
     end
+  rescue BinData::ValidityError, IOError => e
+     @logger.warn("Invalid packet received (#{e})")
   end
 
   private
@@ -397,6 +399,8 @@ class LogStash::Codecs::Netflow < LogStash::Codecs::Base
     end
 
     events
+  rescue BinData::ValidityError, IOError => e
+     @logger.warn("Invalid IPFIX packet received (#{e})")
   end
 
   def load_definitions(defaults, extra)
